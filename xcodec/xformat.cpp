@@ -188,6 +188,18 @@ bool XFormat::RescaleTime(AVPacket* pkt, long long offset_pts, AVRational* time_
 }
 
 
+long long XFormat::RescaleToMs(long long pts, int index)
+{
+	unique_lock<mutex> lock(mtx_);
+	if (!fmt_ctx_ || index < 0 || index > fmt_ctx_->nb_streams)
+	{
+		return 0;
+	}
+	auto in_timebase = fmt_ctx_->streams[index]->time_base;
+	AVRational out_timebase = { 1,1000 };
+	return av_rescale_q(pts, in_timebase, out_timebase);;
+}
+
 void XFormat::set_time_out_ms(int ms)
 {
 	unique_lock<mutex> lock(mtx_);

@@ -49,6 +49,12 @@
     <ClCompile Include="xcamera_record.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="xcalendar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xplayvideo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -58,6 +64,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xcamera_record.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xcalendar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -75,5 +84,13 @@
     <QtMoc Include="xcamera_widget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="xplayvideo.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="xplayvideo.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
 </Project>

@@ -75,6 +75,8 @@ void XCameraRecord::Main()
 		LOGERROR("mux_task.Open failed!");
 		return;
 	}
+	auto a = demux_task.video_index();
+	auto b = demux_task.audio_index();
 	demux_task.set_next(&mux_task);
 	mux_task.set_video_index(demux_task.video_index());
 	mux_task.set_audio_index(demux_task.audio_index());

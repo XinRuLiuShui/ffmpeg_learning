@@ -1,8 +1,13 @@
 #include "xviewer.h"
 #include "xcamera_config.h"
 #include "xcamera_widget.h"
+#include "xcamera_record.h"
+#include "xplayvideo.h"
 
 #include <sstream>
+#include <vector>
+#include <map>
+
 //鼠标事件
 #include <QMouseEvent>
 //垂直布局器
@@ -25,9 +30,13 @@
 #include <QMessageBox>
 //定时器
 #include <QMouseEvent>
+//创建目录
+#include <QDir>
 
 #include <QDebug>
 
+
+using namespace std;
 
 //解决中文乱码
 #define C(s) QString::fromLocal8Bit(s)
@@ -35,6 +44,16 @@
 #define CAMS_CONFIG_FILE "test.db"
 
 static XCameraWidget* cam_windows[16] = { 0 };
+
+static vector<XCameraRecord*> records_vector;
+
+struct XCamViedo
+{
+    QString filepath;
+    QDateTime datetime;
+};
+static map<QDate, vector<XCamViedo>> cam_date_videos;
+
 
 XViewer::XViewer(QWidget *parent)
     : QWidget(parent)
@@ -65,9 +84,9 @@ XViewer::XViewer(QWidget *parent)
     //元素之间的边距
     //hlay->setSpacing(0);
 
-    hlay->addWidget(ui.left);
-    hlay->addWidget(ui.cams);
-
+    hlay->addWidget(ui.left);   //左侧相机列表
+    hlay->addWidget(ui.cams);   //右侧预览窗口
+    hlay->addWidget(ui.playback_widget);    //右侧回放窗口
 
     
 
@@ -82,7 +101,10 @@ XViewer::XViewer(QWidget *parent)
     connect(c, SIGNAL(triggered()), this, SLOT(View9()));
     auto d = m->addAction(C("16窗口"));
     connect(d, SIGNAL(triggered()), this, SLOT(View16()));
-
+    auto e = m->addAction(C("全部开始录制"));
+    connect(e, SIGNAL(triggered()), this, SLOT(StartRecord()));
+    auto f = m->addAction(C("全部停止录制"));
+    connect(f, SIGNAL(triggered()), this, SLOT(StopRecord()));
     View9();
 
     XCameraConfig::Instance()->Load(CAMS_CONFIG_FILE);
@@ -92,6 +114,11 @@ XViewer::XViewer(QWidget *parent)
 
     //启动定时器渲染视频
     startTimer(1);
+
+    //默认显示预览
+    Preview();
+
+    ui.timelist->clear();
 }
 
 void XViewer::ReflashCams()
@@ -369,5 +396,164 @@ void XViewer::DelCam()
     //{
     //    return;
     //}
+}
+
+void XViewer::StartRecord()
+{
+    StopRecord();
+    qDebug() << C("全部摄像头开始录制");
+    ui.status;
+    ui.status->setText(C("录制中..."));
+    auto xc = XCameraConfig::Instance();
+    int count = xc->GetCamCount();
+    for (int i = 0; i < count; i++)
+    {
+        auto cam = xc->GetCam(i);
+        stringstream ss;
+        ss << cam.save_path << "/" << i << "/";
+        QDir dir;
+        QString path = QString::fromStdString(ss.str());
+        if (!dir.mkpath(path))
+        {
+            qDebug() << C("目录创建失败:") << path;
+            continue;
+        }
+        XCameraRecord* record = new XCameraRecord();
+        record->set_rtsp_url(cam.url);
+        record->set_save_path(ss.str());
+        record->set_save_file_sec(5);
+        record->Start();
+        records_vector.push_back(record);
+
+    }
+}
+
+void XViewer::StopRecord()
+{
+    qDebug() << C("全部摄像头停止录制");
+    ui.status->setText(C("监控中..."));
+    for (auto rec:records_vector)
+    {
+        rec->Stop();
+        delete rec;
+        rec = nullptr;
+    }
+    records_vector.clear();
+}
+
+void XViewer::Preview()
+{
+    ui.cams->show();
+    ui.playback_widget->hide();
+}
+
+void XViewer::Playback()
+{
+    ui.playback_widget->show();
+    ui.cams->hide();
+}
+
+void XViewer::SelectCamera(QModelIndex index)
+{
+    qDebug() << "SelectCamera " << index.row();
+    auto conf = XCameraConfig::Instance();
+    auto cam = conf->GetCam(index.row());
+    if (cam.name[0] == '\0')
+    {
+        return;
+    }
+    stringstream ss;
+    ss << cam.save_path << "/" << index.row() << "/";
+
+    QDir dir(C(ss.str().c_str()));
+    if (!dir.exists())
+    {
+        return;
+    }
+
+    QStringList filters;
+    filters << "*.mp4";
+    dir.setNameFilters(filters);
+    cam_date_videos.clear();
+    ui.calendarWidget->ClearDate();
+
+    auto files = dir.entryInfoList();
+    for (auto file : files)
+    {
+        //"cam_2026_01_08_14_25_21.mp4"
+        QString filename = file.fileName();
+        
+        auto temp = filename.left(filename.size() - 4);
+        temp = temp.right(temp.length() - 4);
+        QDateTime dateTime = QDateTime::fromString(temp, "yyyy_MM_dd_hh_mm_ss");
+        //qDebug() << "DateTime:" << dateTime.toString();
+        qDebug() << "DateTime:" << dateTime.date();
+
+
+        ui.calendarWidget->AddDate(dateTime.date());
+
+        // 创建 XCamViedo 对象
+        XCamViedo video;
+        video.filepath = file.absoluteFilePath();  // 存储文件路径
+        video.datetime = dateTime;  // 存储对应的 QDateTime
+
+        // 获取日期部分作为键
+        QDate date = dateTime.date();
+
+        // 将视频保存到 cam_date_videos 中
+        cam_date_videos[date].push_back(video);  // 将视频添加到对应日期的 vector 中
+
+        //qDebug() << file.fileName();
+    }
+    ui.calendarWidget->showNextMonth();
+    ui.calendarWidget->showPreviousMonth();
+}
+
+void XViewer::SelectDate(QDate date)
+{
+    ui.timelist->clear();
+    qDebug() << "SelectDate " << date.toString();
+
+    // 查找日期对应的视频列表
+    auto videos = cam_date_videos[date];
+
+    // 如果该日期没有对应的视频，输出提示
+    if (videos.empty()) {
+        qDebug() << "No videos for the selected date.";
+        return;
+    }
+
+    // 输出该日期对应的视频信息
+    for (const auto& video : videos) {
+        qDebug() << "Video Filepath:" << video.filepath;
+        qDebug() << "Video DateTime:" << video.datetime.toString();
+
+        // 显示时间，保持你的 videoInfo 格式
+        QString videoInfo = video.datetime.time().toString();
+        auto item = new QListWidgetItem(videoInfo);
+
+        // 设置该项的自定义数据为视频的绝对路径
+        item->setData(Qt::UserRole, video.filepath);
+
+        // 将列表项添加到 QListWidget
+        ui.timelist->addItem(item);
+    }
+
+}
+
+void XViewer::PlayVideo(QModelIndex index)
+{
+    qDebug() << "PlayVideo " << index.row();
+
+    // 获取选中项的 QListWidgetItem
+    QListWidgetItem* selectedItem = ui.timelist->currentItem();
+
+    // 获取该项存储的绝对路径（Qt::UserRole 存储的数据）
+    QString videoPath = selectedItem->data(Qt::UserRole).toString();
+
+    qDebug() << "Selected Video Path:" << videoPath;
+    static XPlayVideo play_video;
+    play_video.Open(videoPath.toStdString().c_str());
+    play_video.show();
 }
 

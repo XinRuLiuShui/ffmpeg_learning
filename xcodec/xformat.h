@@ -40,6 +40,9 @@ public:
 	bool RescaleTime(AVPacket* pkt, long long offset_pts, XRational time_base);
 	bool RescaleTime(AVPacket* pkt, long long offset_pts, AVRational* time_base);
 
+	// pts dts duration转化成毫秒计算
+	long long RescaleToMs(long long pts, int index);
+
 	void set_time_out_ms(int ms);
 
 	bool IsTimeout()

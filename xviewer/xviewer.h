@@ -42,6 +42,15 @@ public slots:
     void SetCam();
     void DelCam();
 
+    void StartRecord(); //所有摄像机开始录制
+    void StopRecord();  //所有摄像机停止录制
+
+    void Preview();     //预览窗口
+    void Playback();    //回放窗口
+
+    void SelectCamera(QModelIndex); //选择摄像机
+    void SelectDate(QDate); //选择日期
+    void PlayVideo(QModelIndex);    //选择视频
 private:
     Ui::XViewerClass ui;
     QMenu left_menu_;

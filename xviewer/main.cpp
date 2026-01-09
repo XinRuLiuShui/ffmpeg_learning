@@ -15,11 +15,13 @@ int main(int argc, char *argv[])
     dir.mkpath(save_path);
 
     XCameraRecord camera_record;
-    camera_record.set_rtsp_url("rtmp://liteavapp.qcloud.com/live/liteavdemoplayerstreamid");
+    //camera_record.set_rtsp_url("rtmp://liteavapp.qcloud.com/live/liteavdemoplayerstreamid");
+    camera_record.set_rtsp_url("rtsp://196.21.92.82/axis-media/media.amp");
     //camera_record.set_save_path("record_test.mp4");
     camera_record.set_save_path(save_path);
+    //camera_record.Start();
+    
 
-    camera_record.Start();
     //auto xc = XCameraConfig::Instance();
     //xc->Load(TEST_CONFIG_FILE);
 

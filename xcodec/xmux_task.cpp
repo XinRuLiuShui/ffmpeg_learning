@@ -14,29 +14,29 @@ void XMuxTask::Main()
 	mux_.WriteHeader();
 
 	//找到关键帧
-	while (!is_exit_)
-	{
-		AVPacket* pkt = nullptr;
-		{
-			unique_lock<mutex> lock(mtx_);
-			pkt = pkt_list_.Pop();
-		}
-		if (!pkt)
-		{
-			this_thread::sleep_for(1ms);
-			//MSleep(1);
-			continue;
-		}
-		//找到关键帧
-		if (pkt->stream_index == mux_.video_index() && pkt->flags & AV_PKT_FLAG_KEY)
-		{
-			mux_.Write(pkt);
-			av_packet_free(&pkt);
-			break;
-		}
-		//释放非关键帧
-		av_packet_free(&pkt);
-	}
+	//while (!is_exit_)
+	//{
+	//	AVPacket* pkt = nullptr;
+	//	{
+	//		unique_lock<mutex> lock(mtx_);
+	//		pkt = pkt_list_.Pop();
+	//	}
+	//	if (!pkt)
+	//	{
+	//		this_thread::sleep_for(1ms);
+	//		//MSleep(1);
+	//		continue;
+	//	}
+	//	//找到关键帧
+	//	if (pkt->stream_index == mux_.video_index() && pkt->flags & AV_PKT_FLAG_KEY)
+	//	{
+	//		mux_.Write(pkt);
+	//		av_packet_free(&pkt);
+	//		break;
+	//	}
+	//	//释放非关键帧
+	//	av_packet_free(&pkt);
+	//}
 
 	while (!is_exit_)
 	{
