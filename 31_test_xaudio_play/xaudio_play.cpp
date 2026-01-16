@@ -9,6 +9,7 @@ class CXAudioPlay :public XAudioPlay
 public:
     bool Open(XAudioSpec& spec) 
     {
+        this->spec_ = spec;
         // 退出上一次音频
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
@@ -53,7 +54,7 @@ public:
             SDL_MixAudio(stream + mixed_size,
                 buf.data.data() + buf.offset,
                 size,
-                SDL_MIX_MAXVOLUME);
+                volume_);
 
             need_size -= size;
             mixed_size += size;
@@ -63,6 +64,14 @@ public:
                 audio_datas_.pop_front();
         }
     }
+
+    void close()
+    {
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        std::unique_lock<std::mutex> lock(mtx_);
+        audio_datas_.clear(); 
+    }
+
 };
 XAudioPlay* XAudioPlay::Instance()
 {

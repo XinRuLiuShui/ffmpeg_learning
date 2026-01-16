@@ -79,6 +79,18 @@ public:
 		audio_datas_.push_back(XData{});
 		audio_datas_.back().data.assign(data, data + size);
 	}
+	void set_volume(int v) { volume_ = v; }
+
+	virtual void set_speed(float s)
+	{
+		auto spec = spec_;
+		auto old_freq = spec.freq;
+		spec.freq *= s;
+		Open(spec);
+		spec_.freq = old_freq;
+	}
+
+	virtual void close(void) = 0;
 protected:
 	XAudioPlay();
 	virtual void Callback(unsigned char* stream, int len) = 0;
@@ -91,5 +103,7 @@ protected:
 
 	std::list<XData> audio_datas_;   // “Ù∆µª∫≥Â¡–±Ì
 	std::mutex mtx_;
+	unsigned char volume_ = 128;
+	XAudioSpec spec_;
 };
 
