@@ -36,7 +36,10 @@ void XDecodeTask::Do(AVPacket* pkt)
 	/*if (!pkt || pkt->stream_index != 0) {
 		return;
 	}*/
-	if (!pkt || pkt->stream_index != video_stream_index_) {
+	//if (!pkt || pkt->stream_index != video_stream_index_) {
+	//	return;
+	//}
+	if (!pkt || pkt->stream_index != stream_index_) {
 		return;
 	}
 	unique_lock<mutex> lock(mtx_);
@@ -78,6 +81,12 @@ void XDecodeTask::Main()
 				need_view_ = true;
 				//frame_->format;
 			}
+			if (is_frame_cache_)
+			{
+				auto f = av_frame_alloc();
+				av_frame_ref(f, frame_);
+				frames_.push_back(f);
+			}
 		}
 		this_thread::sleep_for(1ms);
 	}
@@ -94,6 +103,16 @@ void XDecodeTask::Main()
 AVFrame* XDecodeTask::GetFrame()
 {
 	unique_lock<mutex> lock(mtx_);
+	if (is_frame_cache_)
+	{
+		if (frames_.empty())
+		{
+			return nullptr;
+		}
+		auto f = frames_.front();
+		frames_.pop_front();
+		return f;
+	}
 	if (!need_view_ || !frame_	|| !frame_->buf[0])
 	{
 		return nullptr;

@@ -44,6 +44,12 @@ void XDemuxTask::Main()
 
 		Next(&pkt);
 		av_packet_unref(&pkt);
+		//AVPacket* newpkt = av_packet_alloc();
+		//av_packet_ref(newpkt, &pkt);   // 深拷贝引用计数
+
+		//Next(newpkt);
+		//av_packet_unref(&pkt);         // 现在可以安全 unref
+		
 		this_thread::sleep_for(1ms);
 	}
 

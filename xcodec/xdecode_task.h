@@ -18,6 +18,9 @@ public:
     AVFrame* GetFrame();
 
     void set_video_stream_index(int idx) { video_stream_index_ = idx; }
+    void set_audio_stream_index(int idx) { audio_stream_index_ = idx; }
+    void set_stream_index(int idx) { stream_index_ = idx; }
+    void set_is_frame_cache(bool is) { is_frame_cache_ = is; }
 private:
     std::mutex mtx_;
     XDecode decode_;
@@ -25,6 +28,9 @@ private:
     AVFrame* frame_ = nullptr;
     bool need_view_ = false;    // «∑Ò–Ë“™‰÷»æ£¨√ø÷°÷ª‰÷»æ“ª¥Œ
     int video_stream_index_ = -1;
-
+    int audio_stream_index_ = -1;
+    int stream_index_ = -1;
+    std::list<AVFrame*> frames_;  //¥Ê¥¢“Ù∆µª∫≥Â÷°
+    bool is_frame_cache_ = false;
 };
 
