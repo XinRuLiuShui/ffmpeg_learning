@@ -21,6 +21,8 @@ public:
     void set_audio_stream_index(int idx) { audio_stream_index_ = idx; }
     void set_stream_index(int idx) { stream_index_ = idx; }
     void set_is_frame_cache(bool is) { is_frame_cache_ = is; }
+    int video_stream_index(void) { return video_stream_index_; }
+    int audio_stream_index(void) { return audio_stream_index_; }
 private:
     std::mutex mtx_;
     XDecode decode_;
