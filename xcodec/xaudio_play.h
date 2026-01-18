@@ -67,6 +67,7 @@ struct XData
 {
 	std::vector<unsigned char> data;
 	int offset = 0;	//偏移位置
+	long long pts = 0;
 };
 
 class XCODEC_API XAudioPlay
@@ -74,14 +75,16 @@ class XCODEC_API XAudioPlay
 public:
 	static XAudioPlay* Instance();
 	virtual bool Open(AVCodecParameters* para);
+	virtual bool Open(XPara& para);
 	// 打开音频开始播放调用回调函数
 	virtual bool Open(XAudioSpec& spec) = 0;
 
 	virtual void Push(AVFrame* frame);
 
-	void Push(const unsigned char* data, int size) {
+	void Push(const unsigned char* data, int size, long long pts) {
 		std::unique_lock<std::mutex> lock(mtx_);
 		audio_datas_.push_back(XData{});
+		audio_datas_.back().pts = pts;
 		audio_datas_.back().data.assign(data, data + size);
 	}
 	void set_volume(int v) { volume_ = v; }
@@ -94,6 +97,11 @@ public:
 		Open(spec);
 		spec_.freq = old_freq;
 	}
+
+	virtual long long cur_pts(void) = 0;
+	
+	//时间基数,用于生成播放进度
+	void set_time_base(double b) { time_base_ = b; }
 
 	virtual void close(void) = 0;
 protected:
@@ -110,5 +118,6 @@ protected:
 	std::mutex mtx_;
 	unsigned char volume_ = 128;
 	XAudioSpec spec_;
+	double time_base_ = 0;
 };
 

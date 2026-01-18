@@ -44,6 +44,21 @@ void XDecodeTask::Do(AVPacket* pkt)
 	}
 	unique_lock<mutex> lock(mtx_);
 	pkt_list_.Push(pkt);
+
+	if (block_size_ <= 0)
+	{
+		return;
+	}
+	while (!is_exit_)
+	{
+
+		if (pkt_list_.Size() > block_size_)
+		{
+			MSleep(1);
+			continue;
+		}
+		break;
+	}
 }
 
 void XDecodeTask::Main()
@@ -56,8 +71,23 @@ void XDecodeTask::Main()
 		}
 	}
 
+	long long cur_pts = -1;	//当前解码到的pts,以解码数据为准
+
+	
+
 	while (!is_exit_)
 	{
+		//同步
+		while (!is_exit_)
+		{
+			if (syn_pts_ > 0 && cur_pts > syn_pts_)
+			{
+				MSleep(1);
+				continue;
+			}
+			break;
+		}
+
 		auto pkt = pkt_list_.Pop();
 		if (!pkt)
 		{
@@ -80,6 +110,7 @@ void XDecodeTask::Main()
 				cout << "@" << flush;
 				need_view_ = true;
 				//frame_->format;
+				cur_pts = frame_->pts;
 			}
 			if (is_frame_cache_)
 			{

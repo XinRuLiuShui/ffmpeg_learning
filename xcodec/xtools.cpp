@@ -22,6 +22,12 @@ bool PrintErr(int re)
 	return true;
 }
 
+long long XRescale(long long pts, AVRational* src_time_base, AVRational* dts_time_base)
+{
+	return av_rescale_q(pts, *src_time_base, *dts_time_base);;
+}
+
+
 void XThread::Start()
 {
 	unique_lock<mutex> lock(mtx_);
@@ -146,4 +152,10 @@ void XAVPacketList::Push(AVPacket* pkt)
 			pkts_.pop_front();  //³ö¶Ó
 		}
 	}
+}
+
+int XAVPacketList::Size()
+{
+	unique_lock<mutex> lock(mtx_);
+	return pkts_.size();
 }

@@ -50,6 +50,10 @@ XCODEC_API long long NowMs();
 XCODEC_API void XFreeFrame(AVFrame** frame);
 
 XCODEC_API bool PrintErr(int re);
+
+//
+XCODEC_API long long XRescale(long long pts, AVRational* src_time_base, AVRational* dts_time_base);
+
 class XCODEC_API XThread
 {
 public:
@@ -125,8 +129,9 @@ class XAVPacketList
 public:
 	AVPacket* Pop();
 	void Push(AVPacket* pkt);
+	int Size();
 private:
 	std::list<AVPacket*> pkts_;
-	int max_packets_ = 100;	//最大列表数量,超出清0
+	int max_packets_ = 1000;	//最大列表数量,超出清0
 	std::mutex mtx_;
 };

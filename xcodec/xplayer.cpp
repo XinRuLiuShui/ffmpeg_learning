@@ -25,6 +25,8 @@ bool XPlayer::Open(const char* url, void* winid)
 		video_decode_task_.set_audio_stream_index(demux_task_.audio_index());
 		video_decode_task_.set_stream_index(demux_task_.video_index());
 
+		video_decode_task_.set_block_size(100);
+
 		if (!view_)
 		{
 			view_ = XVideoView::Creat(XVideoView::SDL);
@@ -47,10 +49,13 @@ bool XPlayer::Open(const char* url, void* winid)
 		audio_decode_task_.set_audio_stream_index(demux_task_.audio_index());
 		audio_decode_task_.set_stream_index(demux_task_.audio_index());
 		
+		audio_decode_task_.set_block_size(100);
+
 		//设置音频缓冲
 		audio_decode_task_.set_is_frame_cache(true);
 
-		XAudioPlay::Instance()->Open(apara->para);
+
+		XAudioPlay::Instance()->Open(*apara);
 
 	}
 	else
@@ -61,14 +66,23 @@ bool XPlayer::Open(const char* url, void* winid)
 	//把解封装的数据传到此类
 	demux_task_.set_next(this);
 
-	
-
-
     return true;
 }
 
 void XPlayer::Main()
 {
+	long long syn = 0;
+	auto au = XAudioPlay::Instance();
+	
+	while (!is_exit_)
+	{
+		auto vpara = demux_task_.CopyVideoPara();
+		auto apara = demux_task_.CopyAudioPara();
+		syn = XRescale(au->cur_pts(), apara->time_base, vpara->time_base);
+		audio_decode_task_.set_syn_pts(au->cur_pts() + 10000);
+		video_decode_task_.set_syn_pts(syn);
+		MSleep(1);
+	}
 }
 
 void XPlayer::Do(AVPacket* pkt)

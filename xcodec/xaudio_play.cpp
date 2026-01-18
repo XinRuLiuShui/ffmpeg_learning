@@ -11,6 +11,7 @@ using namespace std;
 class CXAudioPlay :public XAudioPlay
 {
 public:
+
     bool Open(XAudioSpec& spec) 
     {
         this->spec_ = spec;
@@ -47,6 +48,8 @@ public:
         int mixed_size = 0;      // 已经处理的字节数
         int need_size = len;     // 需要处理的字节数
 
+        cur_pts_ = buf.pts;
+        last_ms_ = NowMs();
         while (mixed_size < len) 
         {
             if (audio_datas_.empty()) break;
@@ -69,13 +72,30 @@ public:
         }
     }
 
+    long long cur_pts(void) override
+    {
+        double ms = 0;
+        if (last_ms_ > 0)
+        {
+            ms = NowMs() - last_ms_;    //距离上次写入缓冲的时间
+        }
+        //毫秒换算成pts
+        if (time_base_ > 0)
+        {
+            ms = ms / (double)1000 / (double)time_base_;
+        }
+        return cur_pts_ + ms;
+    }
+
     void close()
     {
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
         std::unique_lock<std::mutex> lock(mtx_);
         audio_datas_.clear(); 
     }
-
+private:
+    long long cur_pts_ = 0;	//当前播放位置pts
+    long long last_ms_ = 0;  //上次的时间戳
 };
 XAudioPlay* XAudioPlay::Instance()
 {
@@ -109,6 +129,15 @@ bool XAudioPlay::Open(AVCodecParameters* para)
     return Open(spec);
 }
 
+bool XAudioPlay::Open(XPara& para)
+{
+    if (para.time_base->num > 0)
+    {
+        time_base_ = (double)para.time_base->den / (double)para.time_base->num;
+    }
+    return Open(para.para);
+}
+
 void XAudioPlay::Push(AVFrame* frame)
 {
     vector<unsigned char> buf;
@@ -133,10 +162,10 @@ void XAudioPlay::Push(AVFrame* frame)
             memcpy(dat + i * sample_size * channels, L + i * sample_size, sample_size);
             memcpy(dat + i * sample_size * channels + sample_size, R + i * sample_size, sample_size);
         }
-        Push(dat, frame->linesize[0]);
+        Push(dat, frame->linesize[0], frame->pts);
         break;
     default:
-        Push(frame->data[0], frame->linesize[0]);
+        Push(frame->data[0], frame->linesize[0], frame->pts);
         break;
     }
     

@@ -23,6 +23,11 @@ public:
     void set_is_frame_cache(bool is) { is_frame_cache_ = is; }
     int video_stream_index(void) { return video_stream_index_; }
     int audio_stream_index(void) { return audio_stream_index_; }
+
+    //设置同步时间
+    void set_syn_pts(long long pts) { syn_pts_ = pts; }
+
+    void set_block_size(int size) { block_size_ = size; }
 private:
     std::mutex mtx_;
     XDecode decode_;
@@ -34,5 +39,8 @@ private:
     int stream_index_ = -1;
     std::list<AVFrame*> frames_;  //存储音频缓冲帧
     bool is_frame_cache_ = false;
+    long long syn_pts_ = -1;    //同步时间，-1不同步
+
+    int block_size_ = 0;
 };
 
