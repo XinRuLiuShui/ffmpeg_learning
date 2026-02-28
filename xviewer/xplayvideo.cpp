@@ -36,6 +36,7 @@ bool XPlayVideo::Open(const char* url)
 	}
 	demux_task_.set_next(&decode_task_);
 	decode_task_.set_video_stream_index(demux_task_.video_index());
+	decode_task_.set_stream_index(demux_task_.video_index());
 	//´´½¨äÖÈ¾Æ÷
 	if (!view_)
 	{
